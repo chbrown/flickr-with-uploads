@@ -8,6 +8,8 @@
   },
   "devDependencies": {
     "mocha": "*"
+    , "should": "*"
+    , "growl": "*"
   },
   "keywords": ["flickr", "api", "oauth"],
   "repository": "git://github.com/sujal/node-flickr",
