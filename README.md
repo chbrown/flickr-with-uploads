@@ -21,7 +21,8 @@ Once installed, you can interact with the library with something like this:
 ````javascript
 var Flickr = require('flickr').Flickr;
 
-var client = new Flickr('YOUR_CONSUMER_KEY/API_KEY', 'YOUR_CONSUMER_SECRET', '&lt;optional oauth token&gt;', '&lt;optional oauth token secret&gt;');
+var client = new Flickr('YOUR_CONSUMER_KEY/API_KEY', 'YOUR_CONSUMER_SECRET', 
+                        'optional oauth token', 'optional oauth token secret');
 
 ````
 
