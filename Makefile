@@ -1,7 +1,7 @@
 TESTS = test/*.js
 REPORTER = dot
 
-include .env*
+-include .env
 
 test:
 		@FLICKR_OA_TOKEN=${FLICKR_OA_TOKEN} \
