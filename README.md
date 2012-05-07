@@ -11,6 +11,8 @@ oAuth login process. It may in the future -- I'd appreciate any patches if you h
 The library is heavily inspired by the 
 [flickrnode library by Ciaran Jessup](https://github.com/ciaranj/flickrnode).
 
+__Current Test Status__: [![Build Status](https://secure.travis-ci.org/sujal/node-flickr.png)](http://travis-ci.org/sujal/node-flickr)
+
 ## Usage
 
 Install the library into your package.json file or using the following command:
