@@ -45,7 +45,7 @@ scanning the Network tab above to see what your fork offers.
 
 To setup your local copy for testing, I recommend you run 
 
-`npm link`
+    npm link
 
 in the project directory to
 install all the dependencies. I found that easiest.
