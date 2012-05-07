@@ -61,7 +61,9 @@ The `Makefile` sets up the testing environment to use those files. Yes, the test
 
 Then, whenever you want to run tests:
 
-`make test`
+````
+make test
+````
 
 You should get a nicely formatted output for your tests. You can also override the 
 reporter used by Mocha by setting a `REPORTER` value in `.env`. Read the `Makefile`
