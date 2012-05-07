@@ -50,14 +50,22 @@ To setup your local copy for testing, I recommend you run
 in the project directory to
 install all the dependencies. I found that easiest.
 
-Next, create a .env file in the root of the project directory with the following contents:
+Next, create a .env file in the root of the project directory. The `Makefile` 
+sets up the testing environment to use those values. 
+Yes, the tests run against the live API (for now).
+
+You should probably start with the following contents:
 
 ````
 FLICKR_API_KEY=<Your API Key>
 FLICKR_API_SECRET=<Your API Secret>
+FLICKR_OA_TOKEN=<A valid access token>
+FLICKR_OA_TOKEN_SECRET=<A valid access token secret>
 ````
 
-The `Makefile` sets up the testing environment to use those files. Yes, the tests run against the live API (for now).
+To get the access token and the access token secret, you will need to go through 
+the OAuth dance. You can use something like [this OAuth test client](http://term.ie/oauth/example/client.php)
+to generate those values. Using that tool is beyond the scope of this readme.
 
 Then, whenever you want to run tests:
 
