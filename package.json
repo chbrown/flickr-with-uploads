@@ -1,18 +1,21 @@
 {
-  "name": "flickr",
-  "description": "A simple wrapper for the Flickr API using oAuth 1.0a auth",
-  "version": "0.0.1",
-  "author": "Sujal Shah <codesujal@gmail.com>",
-  "dependencies": {
-    "oauth": ">=0.9.0"
-  },
-  "devDependencies": {
-    "mocha": "*"
+    "name": "flickr"
+  , "description": "A simple wrapper for the Flickr API using oAuth 1.0a auth"
+  , "version": "0.0.1"
+  , "author": "Sujal Shah <codesujal@gmail.com>"
+  , "dependencies": {
+      "oauth": ">=0.9.0"
+    }
+  , "devDependencies": {
+      "mocha": "*"
     , "should": "*"
     , "growl": "*"
-  },
-  "keywords": ["flickr", "api", "oauth"],
-  "repository": "git://github.com/sujal/node-flickr",
-  "main": "index",
-  "engines": { "node": "*" }
+  }
+  , "keywords": ["flickr", "api", "oauth"]
+  , "repository": "git://github.com/sujal/node-flickr"
+  , "main": "index"
+  , "engines": { "node": "*" }
+  , "scripts": {
+      "test": "make test"
+    }
 }
