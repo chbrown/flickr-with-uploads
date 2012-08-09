@@ -4,7 +4,7 @@
   , "version": "0.1.0"
   , "author": "Sujal Shah <codesujal@gmail.com>"
   , "dependencies": {
-      "oauth": ">=0.9.0"
+      "oauth": "git://github.com/xmilliard/node-oauth.git"
     }
   , "devDependencies": {
       "mocha": "*"
