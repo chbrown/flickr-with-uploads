@@ -1,12 +1,12 @@
 # flickr-with-uploads
 
-124-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
+115-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
 
 It currently supports only Flickr's "API Methods" (on the right side of the page [Flickr API Documentation](http://www.flickr.com/services/api/)), and [Uploading](http://www.flickr.com/services/api/upload.api.html).
 
 A pull request is in the process, to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that oAuth library. For the time being, this package requires my `node-oauth` fork, which includes that functionality.
 
-The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 124.
+The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 115.
 [node-flickr](https://github.com/sujal/node-flickr), in turn, is heavily inspired by [the flickrnode library by Ciaran Jessup](https://github.com/ciaranj/flickrnode).
 
 ## Initialization
@@ -52,9 +52,9 @@ And my .env file (all my values are fake, obviously--actual credentials are all 
 And then since all my calls are signed, I wrote a helper function, `api`:
 
 ````javascript
-function api(method_name, data, options, callback) {
+function api(method_name, data, callback) {
   // overloaded as (method_name, data, callback)
-  return client.createRequest(method_name, data, true, options, callback).send();
+  return client.createRequest(method_name, data, true, callback).send();
 }
 ````
 
@@ -66,23 +66,19 @@ Using my `api` function from above:
 var fullpath = '/Users/chbrown/Pictures/Seaworld - The Heist/orca_019.jpg';
 var params = {
   title: 'My new pet: baby orca', description: "Don't tell Seaworld!",
-  is_public: 0, is_friend: 1, is_family: 1, hidden: 2
-};
-var options = {
-  method: 'POST',
-  file: fs.createReadStream(fullpath, {flags: 'r'})
+  is_public: 0, is_friend: 1, is_family: 1, hidden: 2,
+  photo: fs.createReadStream(fullpath, {flags: 'r'})
 };
 // the method_name gets the special value of "upload" for uploads.
-api('upload', params, options, function(err, response) {
+api('upload', params, function(err, response) {
   if (err) {
     console.error("Could not upload photo: ", self.toString() + ". Error message:");
     console.error();
   }
   else {
-    var photo_id = response.photoid;
     // usually, the method name is precisely the name of the API method, as they are here:
-    api('flickr.photosets.addPhoto', {photoset_id: 1272356126, photo_id: photo_id}, function(err, response) {
-      api('flickr.photos.getInfo', {photo_id: photo_id}, function(err, response) {
+    api('flickr.photos.getInfo', {photo_id: response.photoid}, function(err, response) {
+      api('flickr.photosets.addPhoto', {photoset_id: 1272356126, photo_id: response.photo.id}, function(err) {
         console.log("Full photo info:", response.photo);
       });
     });
@@ -96,11 +92,11 @@ Fixes are totally welcome! In the master branch, even! Just use sane formatting 
 
 ## Dependencies
 
-Just one dependency: [form-data](https://github.com/felixge/node-form-data). This is just for the uploads. It works awesome, only takes about three lines to use. felixge is the author of (node-formidable)[https://github.com/felixge/node-formidable], the awesome form parsing library.
+Just one dependency: [form-data](https://github.com/felixge/node-form-data). This is just for the uploads. It works awesomely, only takes about three lines to use. felixge is the author of (node-formidable)[https://github.com/felixge/node-formidable], which is another great form parsing library.
 
 ## Related
 
-The node-flickr rewrite was all just to support my (Flickr Backup Script)[https://github.com/chbrown/flickr-backup]. There are lots more examples in that code, too.
+The node-flickr rewrite was all just to support my (Flickr Backup Script)[https://github.com/chbrown/flickr-backup], which is a script to automatically backup a directory of directories full of pictures as sets of photos to Flickr (since Pro accounts have unlimited storage). There are lots more examples in that code, too.
 
 ## License
 
