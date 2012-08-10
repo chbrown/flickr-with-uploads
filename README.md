@@ -1,83 +1,105 @@
-# node-flickr
+# flickr-with-uploads
 
-__A simple node wrapper for the Flickr API that supports oAuth authentication__
+124-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
 
-This is a small library that adds a thin wrapper around the Flickr API to make it easier to 
-call methods, sign them when necessary.
+It currently supports only Flickr's "API Methods" (on the right side of the page [Flickr API Documentation](http://www.flickr.com/services/api/)), and [Uploading](http://www.flickr.com/services/api/upload.api.html).
 
-It currently does __not__ support the RSS/Atom feeds, nor does it handle the 
-oAuth login process. It may in the future -- I'd appreciate any patches if you have time.
+A pull request is in the process, to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that oAuth library. For the time being, this package requires my `node-oauth` fork, which includes that functionality.
 
-The library is heavily inspired by the 
-[flickrnode library by Ciaran Jessup](https://github.com/ciaranj/flickrnode).
+The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 124.
+[node-flickr](https://github.com/sujal/node-flickr), in turn, is heavily inspired by [the flickrnode library by Ciaran Jessup](https://github.com/ciaranj/flickrnode).
 
-__Current Test Status__: [![Build Status](https://secure.travis-ci.org/sujal/node-flickr.png)](http://travis-ci.org/sujal/node-flickr)
-
-## Usage
+## Initialization
 
 Install the library into your package.json file or using the following command:
 
-    npm install flickr
-
-Once installed, you can interact with the library with something like this:
+    npm install flickr-with-uploads
 
 ````javascript
 var Flickr = require('flickr').Flickr;
 
-var client = new Flickr('YOUR_CONSUMER_KEY/API_KEY', 'YOUR_CONSUMER_SECRET', 
-                        {"oauth_token": 'optional oauth token', "oauth_token_secret": 'optional oauth token secret'});
-
+// constructor arguments: new Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url)
+var client = new Flickr('0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV', 'mbu87dOB0FWncTRJ',
+  '3XF0pqP4daZf9oIlx-a7H1uMLeGrBidkJU', 'KpslBxHoh4QYk6ad')
 ````
 
-Some examples follow.
+I read in options from a `.env` file like so, but you can do it however you want:
+
+````javascript
+function readOptions(callback) {
+  fs.readFile(path.join(__dirname, '.env'), 'utf8', function(err, text) {
+    var opts = {};
+    if (!err) {
+      text.split(/\n/).forEach(function(line) {
+        var line_parts = line.split(/\=/);
+        opts[line_parts[0]] = line_parts[1];
+      });
+    }
+    callback(err, opts);
+  });
+}
+````
+
+And my .env file (all my values are fake, obviously--actual credentials are all hexadecimal):
+
+    FLICKR_API_KEY=0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV
+    FLICKR_API_SECRET=mbu87dOB0FWncTRJ
+    FLICKR_OA_TOKEN=3XF0pqP4daZf9oIlx-a7H1uMLeGrBidkJU
+    FLICKR_OA_TOKEN_SECRET=KpslBxHoh4QYk6ad
+
+And then since all my calls are signed, I wrote a helper function, `api`:
+
+````javascript
+function api(method_name, data, options, callback) {
+  // overloaded as (method_name, data, callback)
+  return client.createRequest(method_name, data, true, options, callback).send();
+}
+````
 
 ## Examples
 
-_Coming Soon_
+Using my `api` function from above:
+
+````javascript
+var fullpath = '/Users/chbrown/Pictures/Seaworld - The Heist/orca_019.jpg';
+var params = {
+  title: 'My new pet: baby orca', description: "Don't tell Seaworld!",
+  is_public: 0, is_friend: 1, is_family: 1, hidden: 2
+};
+var options = {
+  method: 'POST',
+  file: fs.createReadStream(fullpath, {flags: 'r'})
+};
+// the method_name gets the special value of "upload" for uploads.
+api('upload', params, options, function(err, response) {
+  if (err) {
+    console.error("Could not upload photo: ", self.toString() + ". Error message:");
+    console.error();
+  }
+  else {
+    var photo_id = response.photoid;
+    // usually, the method name is precisely the name of the API method, as they are here:
+    api('flickr.photosets.addPhoto', {photoset_id: 1272356126, photo_id: photo_id}, function(err, response) {
+      api('flickr.photos.getInfo', {photo_id: photo_id}, function(err, response) {
+        console.log("Full photo info:", response.photo);
+      });
+    });
+  }
+});
+````
 
 ## Development
 
-Contributions are welcome. Please feel free to submit pull requests. I prefer that pull requests
-come from properly named feature branches (_don't dev in master!_). This makes it easier for people
-scanning the Network tab above to see what your fork offers.
+Fixes are totally welcome! In the master branch, even! Just use sane formatting (like what jsbeautifier.org uses, but with 2-space indents, not 4).
 
-### Running tests
+## Dependencies
 
-To setup your local copy for testing, I recommend you run 
+Just one dependency: [form-data](https://github.com/felixge/node-form-data). This is just for the uploads. It works awesome, only takes about three lines to use. felixge is the author of (node-formidable)[https://github.com/felixge/node-formidable], the awesome form parsing library.
 
-    npm link
+## Related
 
-in the project directory to
-install all the dependencies. I found that easiest.
-
-Next, create a .env file in the root of the project directory. The `Makefile` 
-sets up the testing environment to use those values. 
-Yes, the tests run against the live API (for now).
-
-You should probably start with the following contents:
-
-````
-FLICKR_API_KEY=<Your API Key>
-FLICKR_API_SECRET=<Your API Secret>
-FLICKR_OA_TOKEN=<A valid access token>
-FLICKR_OA_TOKEN_SECRET=<A valid access token secret>
-````
-
-To get the access token and the access token secret, you will need to go through 
-the OAuth dance. You can use something like [this OAuth test client](http://term.ie/oauth/example/client.php)
-to generate those values. Using that tool is beyond the scope of this readme.
-
-Then, whenever you want to run tests:
-
-````
-make test
-````
-
-You should get a nicely formatted output for your tests. You can also override the 
-reporter used by Mocha by setting a `REPORTER` value in `.env`. Read the `Makefile`
-for details.
+The node-flickr rewrite was all just to support my (Flickr Backup Script)[https://github.com/chbrown/flickr-backup]. There are lots more examples in that code, too.
 
 ## License
 
-See the LICENSE file for details.
-
+MIT Licensed. See the LICENSE file for full text.
