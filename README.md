@@ -94,7 +94,11 @@ Here are some sample responses that the Flickr API will send back for a couple o
     {
       photosets: {
         photoset: [
-          { id: '72147630888316081', primary: '7500858540', secret: '3bedf92dec', server: '8214', farm: 9, photos: 3, videos: '0', title: { _content: '20120716 Iceland - Reykjavik' }, description: { _content: 'flickr-store' }, needs_interstitial: 0, visibility_can_see_set: 1, count_views: '0', count_comments: '0', can_comment: 1, date_create: '1344024608', date_update: '1344024918' },
+          { id: '72147630888316081', primary: '7500858540', secret: '3bedf92dec', server: '8214', farm: 9,
+            photos: 3, videos: '0', title: { _content: '20120716 Iceland - Reykjavik' },
+            description: { _content: 'flickr-store' }, needs_interstitial: 0, visibility_can_see_set: 1,
+            count_views: '0', count_comments: '0', can_comment: 1,
+            date_create: '1344024608', date_update: '1344024918' },
           ...
         ]
       }
@@ -105,7 +109,9 @@ Here are some sample responses that the Flickr API will send back for a couple o
     {
       photos: {
         photo: [
-          { id: '7500858540', owner: '33947520@N00', secret: 'f38df12d5c', server: '8014', farm: 9, title: 'flickr-store', ispublic: 0, isfriend: 0, isfamily: 0 }
+          { id: '7500858540', owner: '33947520@N00', secret: 'f38df12d5c',
+            server: '8014', farm: 9, title: 'flickr-store',
+            ispublic: 0, isfriend: 0, isfamily: 0 }
         ],
         ...
       }
