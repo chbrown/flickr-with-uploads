@@ -15,8 +15,10 @@ Install the library into your package.json file or using the following command:
 
     npm install flickr-with-uploads
 
+And then require it like so:
+
 ````javascript
-var Flickr = require('flickr').Flickr;
+var Flickr = require('flickr-with-uploads').Flickr;
 
 // constructor arguments: new Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url)
 var client = new Flickr('0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV', 'mbu87dOB0FWncTRJ',
