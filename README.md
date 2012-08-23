@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/chbrown/flickr-with-uploads.png)](http://travis-ci.org/chbrown/flickr-with-uploads)
 # flickr-with-uploads
 
 115-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
