@@ -42,6 +42,8 @@ function readOptions(callback) {
 }
 ````
 
+Otherwise, you can use global variable process.env which contains the content of your .env file 
+
 And my .env file (all my values are fake, obviously--actual credentials are all hexadecimal):
 
     FLICKR_API_KEY=0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV
