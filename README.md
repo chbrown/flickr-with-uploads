@@ -7,7 +7,7 @@ It currently supports only Flickr's "API Methods" (on the right side of the page
 A pull request is in the process, to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that oAuth library. For the time being, this package requires my `node-oauth` fork, which includes that functionality.
 
 The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 115.
-[node-flickr](https://github.com/sujal/node-flickr), in turn, is heavily inspired by [the flickrnode library by Ciaran Jessup](https://github.com/ciaranj/flickrnode).
+[node-flickr](https://github.com/sujal/node-flickr), in turn, is heavily inspired by the [flickrnode](https://github.com/ciaranj/flickrnode) library, from Ciaran Jessup.
 
 ## Initialization
 
@@ -130,11 +130,11 @@ Fixes are totally welcome! In the master branch, even! Just use sane formatting 
 
 ## Dependencies
 
-Just one dependency: [form-data](https://github.com/felixge/node-form-data). This is just for the uploads. It works awesomely, only takes about three lines to use. felixge is the author of (node-formidable)[https://github.com/felixge/node-formidable], which is another great form parsing library.
+Just one dependency: [form-data](https://github.com/felixge/node-form-data). This is just for the uploads. It works awesomely, only takes about three lines to use. felixge is the author of [node-formidable](https://github.com/felixge/node-formidable), which is another great form parsing library.
 
 ## Related
 
-The node-flickr rewrite was all just to support my (Flickr Backup Script)[https://github.com/chbrown/flickr-backup], which is a script to automatically backup a directory of directories full of pictures as sets of photos to Flickr (since Pro accounts have unlimited storage). There are lots more examples in that code, too.
+The node-flickr rewrite was all just to support my [Flickr Backup Script](https://github.com/chbrown/flickr-backup), which is a script to automatically backup a directory of directories full of pictures as sets of photos to Flickr (since Pro accounts have unlimited storage). There are lots more examples in that code, too.
 
 ## License
 
