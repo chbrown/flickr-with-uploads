@@ -1,12 +1,12 @@
 # flickr-with-uploads
 
-115-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
+123-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
 
 It currently supports only Flickr's "API Methods" (on the right side of the page [Flickr API Documentation](http://www.flickr.com/services/api/)), and [Uploading](http://www.flickr.com/services/api/upload.api.html).
 
 A pull request is in the process, to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that oAuth library. For the time being, this package requires my `node-oauth` fork, which includes that functionality.
 
-The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 115.
+The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 123.
 [node-flickr](https://github.com/sujal/node-flickr), in turn, is heavily inspired by the [flickrnode](https://github.com/ciaranj/flickrnode) library, from Ciaran Jessup.
 
 ## Initialization
