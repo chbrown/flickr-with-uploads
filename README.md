@@ -42,7 +42,7 @@ function readOptions(callback) {
 }
 ````
 
-Otherwise, you can use global variable process.env which contains the content of your .env file 
+Otherwise, you can use global variable process.env which contains the content of your .env file
 
 And my .env file (all my values are fake, obviously--actual credentials are all hexadecimal):
 
@@ -140,4 +140,4 @@ The node-flickr rewrite was all just to support my [Flickr Backup Script](https:
 
 ## License
 
-MIT Licensed. See the LICENSE file for full text.
+Copyright (c) 2013 Christopher Brown, [MIT Licensed](http://opensource.org/licenses/MIT)
