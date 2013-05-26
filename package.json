@@ -10,7 +10,8 @@
   "repository": "git://github.com/chbrown/flickr-with-uploads.git",
   "dependencies": {
     "oauth": "git://github.com/chbrown/node-oauth.git",
-    "form-data": "*"
+    "form-data": "*",
+    "underscore": "*"
   },
   "main": "index"
 }

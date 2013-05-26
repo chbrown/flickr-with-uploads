@@ -3,6 +3,7 @@ var url = require('url');
 var querystring = require('querystring');
 var OAuth = require('oauth').OAuth;
 var FormData = require('form-data');
+var _ = require('underscore');
 
 function Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url) {
   this.consumer_key = consumer_key;
@@ -27,7 +28,7 @@ function FlickrRequest(client, method, params, signed_in, callback) {
 }
 FlickrRequest.prototype.queryString = function() {
   // easy Object.clone hack
-  var params = JSON.parse(JSON.stringify(this.params));
+  var params = _.clone(this.params);
   params.format = 'json';
   params.nojsoncallback = '1';
   if (this.signed_in) params.api_key = this.client.consumer_key;
