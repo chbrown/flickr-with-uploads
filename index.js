@@ -3,6 +3,9 @@ var url = require('url');
 var querystring = require('querystring');
 var OAuth = require('oauth').OAuth;
 var FormData = require('form-data');
+var _ = require('underscore');
+var xml2js = require('xml2js');
+
 
 function Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url) {
   this.consumer_key = consumer_key;
@@ -27,7 +30,7 @@ function FlickrRequest(client, method, params, signed_in, callback) {
 }
 FlickrRequest.prototype.queryString = function() {
   // easy Object.clone hack
-  var params = JSON.parse(JSON.stringify(this.params));
+  var params = _.clone(this.params);
   params.format = 'json';
   params.nojsoncallback = '1';
   if (this.signed_in) params.api_key = this.client.consumer_key;
@@ -85,38 +88,38 @@ FlickrRequest.prototype.handleResponseStream = function(response) {
   });
 };
 FlickrRequest.prototype.processResponse = function(response_body) {
-  if (response_body.match(/^<\?xml/)) {
-    var upload_match = response_body.match(/<photoid>(\d+)<\/photoid>/);
-    if (upload_match) {
-      response_body = JSON.stringify({photoid: upload_match[1], stat: 'ok'});
-    }
-  }
-  else if (response_body) {
+  var self = this;
+  if (response_body.match(/^\s*<\?xml/)) {
+    xml2js.parseString(response_body, {'explicitArray': false}, function(err, result) {
+      result = !err && _.omit(_.extend(result.rsp, result.rsp.$), '$');
+      handleRes(err, result);
+    });
+  } else if (response_body) {
     // Bizarrely Flickr seems to send back invalid JSON (it escapes single quotes in certain circumstances?!?!!?)
     // We fix that here. <- Sujal
     response_body = response_body.replace(/\\'/g,"'");
+    var err, res;
+    try {
+      res = JSON.parse(response_body);
+    } catch (exc) {
+      err = exc.toString();
+    }
+    handleRes(err, res);
+  } else {
+    handleRes(null, {});
   }
 
-  var res = {};
-  try {
-    res = JSON.parse(response_body);
-  }
-  catch (exc) {
-    res.error = exc.toString();
-  }
-
-
-  if (res.stat === 'ok') {
-    this.callback(null, res);
-  }
-  else {
-    // throw ;
-    var error = 'flickr-with-uploads error.';
-    if (res && res.code && res.message)
-      error += ' ' + res.code + ': ' + res.message;
-    else if (res && res.error)
-      error += ' ' + res.error;
-    this.callback(new Error(error));
+  function handleRes(err, res) {
+    if (res.stat === 'ok') {
+      self.callback(null, res);
+    } else {
+      var error = 'flickr-with-uploads error.';
+      if (res && res.code && res.message)
+        error += ' ' + res.code + ': ' + res.message;
+      else if (res && res.error)
+        error += ' ' + res.error;
+      self.callback(new Error(error));
+    }
   }
 };
 
