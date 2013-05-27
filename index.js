@@ -90,7 +90,7 @@ FlickrRequest.prototype.handleResponseStream = function(response) {
 FlickrRequest.prototype.processResponse = function(response_body) {
   var self = this;
   if (response_body.match(/^\s*<\?xml/)) {
-    xml2js.parseString(response_body, function(err, result) {
+    xml2js.parseString(response_body, {'explicitArray': false}, function(err, result) {
       result = !err && _.omit(_.extend(result.rsp, result.rsp.$), '$');
       handleRes(err, result);
     });
