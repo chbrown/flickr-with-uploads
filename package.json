@@ -11,7 +11,8 @@
   "dependencies": {
     "oauth": "git://github.com/chbrown/node-oauth.git",
     "form-data": "*",
-    "underscore": "*"
+    "underscore": "*",
+    "xml2js": "0.2.x"
   },
   "main": "index"
 }
