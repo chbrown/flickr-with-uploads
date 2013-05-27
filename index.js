@@ -94,10 +94,6 @@ FlickrRequest.prototype.processResponse = function(response_body) {
       result = !err && _.omit(_.extend(result.rsp, result.rsp.$), '$');
       handleRes(err, result);
     });
-    //var upload_match = response_body.match(/<photoid>(\d+)<\/photoid>/);
-    //if (upload_match) {
-    //  response_body = JSON.stringify({photoid: upload_match[1], stat: 'ok'});
-    //}
   } else if (response_body) {
     // Bizarrely Flickr seems to send back invalid JSON (it escapes single quotes in certain circumstances?!?!!?)
     // We fix that here. <- Sujal
