@@ -69,9 +69,8 @@ FlickrRequest.prototype.sendPOST = function() {
   }
   form.append('photo', this.params.photo);
 
-  var payload = {host: api_url_parts.host, path: '/services/'+ this.method+'/?format=json', headers: form.getHeaders(), method: 'POST'};
-  var req = http.request(payload, function(res) { self.handleResponseStream(res); });
-  form.pipe(req);
+  var payload = {host: api_url_parts.host, path: '/services/'+ this.method+'/?format=json', method: 'POST'};
+  form.submit(payload, function(err, res) { self.handleResponseStream(res); });
 };
 
 FlickrRequest.prototype.handleResponseStream = function(response) {
