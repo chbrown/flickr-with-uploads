@@ -3,6 +3,8 @@ var url = require('url');
 var querystring = require('querystring');
 var OAuth = require('oauth').OAuth;
 var FormData = require('form-data');
+var fs = require('fs');
+var path = require('path');
 
 function Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url) {
   this.consumer_key = consumer_key;
@@ -67,11 +69,25 @@ FlickrRequest.prototype.sendPOST = function() {
   for (var key in querystring_parts) {
     form.append(key, querystring_parts[key]);
   }
-  form.append('photo', this.params.photo);
-
-  var payload = {host: api_url_parts.host, path: '/services/'+ this.method+'/?format=json', headers: form.getHeaders(), method: 'POST'};
-  var req = http.request(payload, function(res) { self.handleResponseStream(res); });
-  form.pipe(req);
+    
+  var filePath = this.params.photo.path;
+  var options = {
+	  filename: path.basename(filePath),
+	  contentType: 'image/jpeg',
+	  knownLength: fs.statSync(filePath).size 
+  };
+  form.append('photo', this.params.photo, options);
+    
+  form.getLength(function(obj, length) {
+	  
+	  var postHeaders = form.getHeaders();
+	  postHeaders['Content-Length'] = length;
+	  
+	  var payload = {host: api_url_parts.host, path: '/services/upload/?format=json', headers: postHeaders, method: 'POST'};
+	  var req = http.request(payload, function(res) { self.handleResponseStream(res); });
+	  form.pipe(req);
+	  
+  });
 };
 
 FlickrRequest.prototype.handleResponseStream = function(response) {
