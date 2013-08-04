@@ -1,93 +1,110 @@
 # flickr-with-uploads
 
-128-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
+Small (184 lines) Node.js wrapper for the Flickr API, using oAuth authentication, supporting `upload` and `replace` calls, which have special requirements.
 
-It currently supports only Flickr's "API Methods" (on the right side of the page [Flickr API Documentation](http://www.flickr.com/services/api/)), and [Uploading](http://www.flickr.com/services/api/upload.api.html).
+Three dependencies:
 
-A pull request is in the process, to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that oAuth library. For the time being, this package requires my `node-oauth` fork, which includes that functionality.
+* `form-data`, to assemble urls for OAuth signing
+* [`oauth`](https://github.com/chbrown/node-oauth.git), to add OAuth url signatures
+* `sax`, to parse the few calls for which Flickr does not support JSON responses.
 
-The library is forked from [node-flickr](https://github.com/sujal/node-flickr), but I pretty much rewrote the whole flickr.js file. I fixed the formatting, simplified the signing or not-signing handling, and **most importantly** now support uploading. Even though I added a pretty big feature, I decreased the line count from 158 to 123.
-[node-flickr](https://github.com/sujal/node-flickr), in turn, is heavily inspired by the [flickrnode](https://github.com/ciaranj/flickrnode) library, from Ciaran Jessup.
+I've sent a pull request to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that OAuth library. For the time being, this package requires my fork, which includes that functionality.
 
-## Initialization
+**Backwards compatability**
 
-Install the library into your package.json file or using the following command:
+Around June 2013 Flickr made a few changes to their API. The resulting fixes and refactoring have simplified this module, but in doing so made it incompatible with the old usage. If you want the old structure, just require `~0.3` in your dependencies.
 
-    npm install flickr-with-uploads
+Otherwise see below for changes.
 
-And then require it like so:
 
-````javascript
-var Flickr = require('flickr-with-uploads').Flickr;
+## Install
 
-// constructor arguments: new Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url)
-var client = new Flickr('0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV', 'mbu87dOB0FWncTRJ',
-  '3XF0pqP4daZf9oIlx-a7H1uMLeGrBidkJU', 'KpslBxHoh4QYk6ad')
-````
+Using npm directly:
 
-I read in options from a `.env` file like so, but you can do it however you want:
+```bash
+npm install flickr-with-uploads
+```
 
-````javascript
-function readOptions(callback) {
-  fs.readFile(path.join(__dirname, '.env'), 'utf8', function(err, text) {
-    var opts = {};
-    if (!err) {
-      text.split(/\n/).forEach(function(line) {
-        var line_parts = line.split(/\=/);
-        opts[line_parts[0]] = line_parts[1];
-      });
-    }
-    callback(err, opts);
-  });
+Or require the library from your `package.json`:
+
+```json
+{
+  ...
+  "dependencies" : {
+    "flickr-with-uploads": "*",
+    ...
+  }
 }
-````
+```
 
-Otherwise, you can use global variable process.env which contains the content of your .env file
+## Usage
 
-And my .env file (all my values are fake, obviously--actual credentials are all hexadecimal):
+First we want to prepare a closure preloaded with our credentials, which we'll call `api`:
 
-    FLICKR_API_KEY=0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV
-    FLICKR_API_SECRET=mbu87dOB0FWncTRJ
-    FLICKR_OA_TOKEN=3XF0pqP4daZf9oIlx-a7H1uMLeGrBidkJU
-    FLICKR_OA_TOKEN_SECRET=KpslBxHoh4QYk6ad
+```javascript
+var flickr = require('flickr-with-uploads');
+var api = flickr(
+  '0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV', // consumer_key
+  'mbu87dOB0FWncTRJ', // consumer_secret
+  '3XF0pqP4daZf9oIlx-a7H1uMLeGrBidkJU', // oauth_token
+  'KpslBxHoh4QYk6ad'); // oauth_token_secret
+```
 
-And then since all my calls are signed, I wrote a helper function, `api`:
+I keep these in a JSON file at `~/.flickr`, which is what [flickr-sync](https://github.com/chbrown/flickr-sync), so if you plan on using that, this is probably the way to go.
 
-````javascript
-function api(method_name, data, callback) {
-  // overloaded as (method_name, data, callback)
-  return client.createRequest(method_name, data, true, callback).send();
+```json
+{
+  "consumer_key": "0RjUImXvsYx2P8Gi4eZScFh9fkLJltDV",
+  "consumer_secret": "mbu87dOB0FWncTRJ",
+  "oauth_token": "3XF0pqP4daZf9oIlx-a7H1uMLeGrBidkJU",
+  "oauth_token_secret": "KpslBxHoh4QYk6ad"
 }
-````
+```
+
+(All my values are fake, obviously---actual Flickr credentials are all hexadecimal.)
 
 ## Examples
 
-Using my `api` function from above:
+Using the `api` function from above, let's upload a file.
 
-````javascript
+```javascript
 var fullpath = '/Users/chbrown/Pictures/Seaworld - The Heist/orca_019.jpg';
-var params = {
-  title: 'My new pet: baby orca', description: "Don't tell Seaworld!",
-  is_public: 0, is_friend: 1, is_family: 1, hidden: 2,
-  photo: fs.createReadStream(fullpath, {flags: 'r'})
-};
-// the method_name gets the special value of "upload" for uploads.
-api('upload', params, function(err, response) {
+// the upload method is special, but this library automatically handles the
+// hostname change
+api({
+  method: 'upload',
+  title: 'My new pet: baby orca',
+  description: "Don't tell Seaworld!",
+  is_public: 0,
+  is_friend: 1,
+  is_family: 1,
+  hidden: 2,
+  photo: fs.createReadStream(fullpath)
+}, function(err, response) {
   if (err) {
-    console.error("Could not upload photo:", err.toString());
+    console.error('Could not upload photo:', err);
   }
   else {
+    var new_photo_id = response.photoid._content;
     // usually, the method name is precisely the name of the API method, as they are here:
-    api('flickr.photos.getInfo', {photo_id: response.photoid}, function(err, response) {
-      api('flickr.photosets.addPhoto', {photoset_id: 1272356126, photo_id: response.photo.id}, function(err) {
-        console.log("Full photo info:", response.photo);
+    api({method: 'flickr.photos.getInfo', photo_id: new_photo_id}, function(err, response) {
+      console.log('Full photo info:', response);
+      api({method: 'flickr.photosets.addPhoto', photoset_id: 1272356126, photo_id: new_photo_id}, function(err, response) {
+        console.log('Added photo to photoset:', response);
       });
     });
   }
 });
-````
+```
 
-## Flickr API Examples
+## Related
+
+This library was (re)written to support my [flickr-sync](https://github.com/chbrown/flickr-sync) project, which is a script to backup a directory of directories full of pictures as sets of photos to Flickr. Since Pro accounts have unlimited storage on Flickr, and they allow totally private photos, it's a great archival service.
+
+See [flickr-sync](https://github.com/chbrown/flickr-sync) for many more examples of using this library (it has been updated to use the ~1.0 version).
+
+
+### Flickr API Examples
 
 Here are some sample responses that the Flickr API will send back for a couple of API methods (usually the responses are much longer, I'm abbreviating here to the interesting stuff (for example, you'll always get a `{ stat: 'ok' }` value for successful queries, but I don't include that here):
 
@@ -129,14 +146,6 @@ Here are some sample responses that the Flickr API will send back for a couple o
 ## Development
 
 Fixes are totally welcome! In the master branch, even! Just use sane formatting (like what jsbeautifier.org uses, but with 2-space indents, not 4).
-
-## Dependencies
-
-Just one dependency: [form-data](https://github.com/felixge/node-form-data). This is just for the uploads. It works awesomely, only takes about three lines to use. felixge is the author of [node-formidable](https://github.com/felixge/node-formidable), which is another great form parsing library.
-
-## Related
-
-The node-flickr rewrite was all just to support my [Flickr Backup Script](https://github.com/chbrown/flickr-backup), which is a script to automatically backup a directory of directories full of pictures as sets of photos to Flickr (since Pro accounts have unlimited storage). There are lots more examples in that code, too.
 
 ## License
 
