@@ -1,11 +1,16 @@
 {
   "name": "flickr-with-uploads",
   "description": "Flickr API with OAuth 1.0A and uploads",
-  "version": "0.3.1",
-  "keywords": ["flickr", "uploads", "api", "oauth"],
-  "repository" : {
-    "type" : "git",
-    "url" : "git://github.com/chbrown/flickr-with-uploads.git"
+  "version": "1.0.0",
+  "keywords": [
+    "flickr",
+    "uploads",
+    "api",
+    "oauth"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/chbrown/flickr-with-uploads.git"
   },
   "bugs": {
     "url": "https://github.com/chbrown/flickr-with-uploads/issues",
