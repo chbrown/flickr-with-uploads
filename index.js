@@ -71,9 +71,7 @@ function request(opts, oauth, oauth_token, oauth_token_secret, callback) {
   }
 
   var urlStr = url.format(urlObj);
-  console.error('flickr-with-uploads urlStr', urlStr);
   var signed_urlStr = oauth.signUrl(urlStr, oauth_token, oauth_token_secret, http_method);
-  console.error('flickr-with-uploads signed_urlStr', signed_urlStr);
   var request_opts = url.parse(signed_urlStr, true);
   request_opts.method = http_method;
 
