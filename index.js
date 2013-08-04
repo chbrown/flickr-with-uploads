@@ -1,123 +1,180 @@
+'use strict'; /*jslint es5: true, node: true, indent: 2 */
 var http = require('http');
 var url = require('url');
-var querystring = require('querystring');
-var OAuth = require('oauth').OAuth;
+var oauth = require('oauth');
 var FormData = require('form-data');
+var sax = require('sax');
 
-function Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url) {
-  this.consumer_key = consumer_key;
-  this.consumer_secret = consumer_secret;
-  this.oauth_token = oauth_token;
-  this.oauth_token_secret = oauth_token_secret;
-
-  this.base_url = base_url || '/services/rest';
-  this.oauth_client = new OAuth('http://www.flickr.com/services/oauth/request_token',
-    'http://www.flickr.com/services/oauth/access_token', consumer_key, consumer_secret, '1.0A', null, 'HMAC-SHA1');
+function readToEnd(readable_stream, callback) {
+  var content = '';
+  readable_stream.setEncoding('utf8');
+  readable_stream.on('data', function (chunk) {
+    content += chunk;
+  });
+  readable_stream.on('error', function (err) {
+    callback(err, content);
+  });
+  readable_stream.on('end', function () {
+    callback(null, content);
+  });
 }
-Flickr.prototype.createRequest = function(method, params, signed_in, callback) {
-  return new FlickrRequest(this, method, params, signed_in, callback);
+
+// requestFactory uses these urls, but this hash is also attached to the requestFactory
+// so that the user can change them if needed.
+var oauth_endpoints = {
+  request: 'http://www.flickr.com/services/oauth/request_token',
+  authorize: 'http://www.flickr.com/services/oauth/authorize',
+  access: 'http://www.flickr.com/services/oauth/access_token',
 };
 
-function FlickrRequest(client, method, params, signed_in, callback) {
-  this.client = client;
-  this.method = method;
-  this.params = params;
-  this.signed_in = signed_in;
-  this.callback = callback;
-}
-FlickrRequest.prototype.queryString = function() {
-  // easy Object.clone hack
-  var params = JSON.parse(JSON.stringify(this.params));
-  params.format = 'json';
-  params.nojsoncallback = '1';
-  if (this.signed_in) params.api_key = this.client.consumer_key;
-  if (this.method !== 'upload' && this.method !== 'replace')
-    params.method = this.method;
-  else
-    delete params.photo;
-  return '?' + querystring.stringify(params);
-};
-FlickrRequest.prototype.send = function() {
-  if (this.method === 'upload' || this.method === 'replace')
-    this.sendPOST();
-  else
-    this.sendGET();
-};
-FlickrRequest.prototype.sendGET = function() {
-  var self = this,
-    api_url = 'http://api.flickr.com' + this.client.base_url + this.queryString();
+function request(opts, oauth, oauth_token, oauth_token_secret, callback) {
+  /**
+    `opts` is a object of parameters, generally with strings values,
+      or perhaps a readable stream. There are two required keys:
+    `opts.method` is the simple name of the Flickr API call
+    `opts.api_key` is the oauth consumer key
 
-  if (this.signed_in)
-    api_url = this.client.oauth_client.signUrl(api_url, this.client.oauth_token, this.client.oauth_token_secret);
+    if `opts.photo` is set and `opts.method` is "upload" or "replace",
+      it is assumed to be a readable stream, will be detached for signing purposes,
+      and then reattached to the POST request.
 
-  var api_url_parts = url.parse(api_url);
+    callback signature: function(err, response)
+  */
+  var urlObj = {
+    protocol: 'http',
+    hostname: 'ycpi.api.flickr.com',
+    pathname: '/services/rest/'
+  };
+  var http_method = 'GET';
 
-  var payload = {host: api_url_parts.host, path: api_url_parts.path};
-  var req = http.request(payload, function(res) { self.handleResponseStream(res); });
-  req.end();
-};
-FlickrRequest.prototype.sendPOST = function() {
-  var self = this,
-    api_url = this.client.oauth_client.signUrl('http://api.flickr.com/services/'+ this.method+'/' + this.queryString(),
-      this.client.oauth_token, this.client.oauth_token_secret, 'POST'),
-    api_url_parts = url.parse(api_url),
-    querystring_parts = querystring.parse(api_url_parts.query),
-    form = new FormData();
-
-  for (var key in querystring_parts) {
-    form.append(key, querystring_parts[key]);
+  if (opts.method == 'upload') {
+    urlObj.hostname = 'up.flickr.com';
+    // http://up.flickr.com/services/upload/
+    urlObj.pathname = '/services/upload/';
+    http_method = 'POST';
   }
-  form.append('photo', this.params.photo);
+  else if (opts.method == 'replace') {
+    urlObj.pathname = '/services/replace/';
+    http_method = 'POST';
+  }
 
-  var payload = {host: api_url_parts.host, path: '/services/'+ this.method+'/?format=json', headers: form.getHeaders(), method: 'POST'};
-  var req = http.request(payload, function(res) { self.handleResponseStream(res); });
-  form.pipe(req);
-};
+  var photo = opts.photo;
+  delete opts.photo;
 
-FlickrRequest.prototype.handleResponseStream = function(response) {
-  var self = this, data = '';
-  response.setEncoding('utf8');
-  response.on('data', function (chunk) {
-    data += chunk;
-  });
-  response.on('end', function () {
-    self.processResponse(data);
-  });
-};
-FlickrRequest.prototype.processResponse = function(response_body) {
-  if (response_body.match(/^<\?xml/)) {
-    var upload_match = response_body.match(/<photoid>(\d+)<\/photoid>/);
-    if (upload_match) {
-      response_body = JSON.stringify({photoid: upload_match[1], stat: 'ok'});
+  urlObj.query = {
+    format: 'json',
+    nojsoncallback: '1',
+  };
+  // method and api_key come from opts
+  for (var opt_key in opts) {
+    urlObj.query[opt_key] = opts[opt_key];
+  }
+
+  var urlStr = url.format(urlObj);
+  console.error('flickr-with-uploads urlStr', urlStr);
+  var signed_urlStr = oauth.signUrl(urlStr, oauth_token, oauth_token_secret, http_method);
+  console.error('flickr-with-uploads signed_urlStr', signed_urlStr);
+  var request_opts = url.parse(signed_urlStr, true);
+  request_opts.method = http_method;
+
+  if (http_method == 'POST') {
+    var form = new FormData();
+    // get the querystring-less version of the path
+    request_opts.path = request_opts.pathname;
+    for (var query_key in request_opts.query) {
+      form.append(query_key, request_opts.query[query_key]);
     }
-  }
-  else if (response_body) {
-    // Bizarrely Flickr seems to send back invalid JSON (it escapes single quotes in certain circumstances?!?!!?)
-    // We fix that here. <- Sujal
-    response_body = response_body.replace(/\\'/g,"'");
-  }
+    if (photo) {
+      form.append('photo', photo);
+    }
 
-  var res = {};
-  try {
-    res = JSON.parse(response_body);
-  }
-  catch (exc) {
-    res.error = exc.toString();
-  }
-
-
-  if (res.stat === 'ok') {
-    this.callback(null, res);
+    // Thanks to @neojski for this snippet
+    //   https://github.com/chbrown/flickr-with-uploads/issues/5
+    form.submit(request_opts, callback);
   }
   else {
-    // throw ;
-    var error = 'flickr-with-uploads error.';
-    if (res && res.code && res.message)
-      error += ' ' + res.code + ': ' + res.message;
-    else if (res && res.error)
-      error += ' ' + res.error;
-    this.callback(new Error(error));
+    http.get(request_opts, function(res) {
+      callback(null, res);
+    }).on('error', callback);
   }
+}
+
+function xml2js(xml, callback) {
+  // callback signature: function(err, object).
+  var obj = {};
+  var stack = [];
+  // sax has this weird quirk where you have to throw the error to make it quit parsing.
+  try {
+    var parser = sax.createStream(true, {trim: true});
+    parser.on('error', function(err) {
+      throw err;
+    })
+    .on('text', function(text) {
+      if (stack.length) {
+        stack[stack.length - 1]._content = (stack[stack.length - 1]._content || '') + text;
+      }
+    })
+    .on('opentag', function(node) {
+      stack.push(node.attributes);
+    })
+    .on('closetag', function(node) {
+      obj[node] = stack.pop();
+    })
+    .on('end', function() {
+      callback(null, obj);
+    });
+    parser.end(xml);
+  }
+  catch (sax_exception) {
+    callback(sax_exception);
+  }
+}
+
+function coalesce(body, callback) {
+  /** Flickr doesn't always respond with JSON,
+    1. It returns a querystring when there are (OAuth) errors.
+    2. It returns xml for 'upload' and 'replace' requests.
+
+    callback signature: function(err, response_object)
+  */
+  try {
+    return JSON.parse(body);
+  }
+  catch (json_parse_exception) {
+    // for example, an async upload response:
+    // "<?xml version="1.0" encoding="utf-8" ?>
+    // <rsp stat="ok">\n<ticketid>8412916-19001238788141232</ticketid>\n</rsp>\n"
+    // or a normal upload:
+    // <photoid>1234</photoid>
+    // or a replace:
+    // <photoid secret="abcdef" originalsecret="abcdef">1234</photoid>
+    xml2js(body, function(err, doc) {
+      callback(err, doc);
+    });
+  }
+}
+
+var requestFactory = module.exports = function(consumer_key, consumer_secret, oauth_token, oauth_token_secret) {
+  /** set up a request factory, creating a closure of variables so that we can
+  create multiple requests without unncessary re-initialization. */
+  var oauth_client = new oauth.OAuth(
+    oauth_endpoints.request, oauth_endpoints.access,
+    consumer_key, consumer_secret, '1.0A', null, 'HMAC-SHA1');
+  return function(opts, callback) {
+    // callback signature: function(err, response_object)
+    opts.api_key = consumer_key;
+    request(opts, oauth_client, oauth_token, oauth_token_secret, function(err, response) {
+      readToEnd(response, function(err, body) {
+        if (err) {
+          callback(err);
+        }
+        else {
+          coalesce(body, callback);
+        }
+      });
+    });
+  };
 };
 
-exports.Flickr = Flickr;
+requestFactory.oauth_endpoints = oauth_endpoints;
+requestFactory.request = request;

@@ -1,16 +1,26 @@
 {
   "name": "flickr-with-uploads",
-  "description": "Simple Flickr API for Node.js using OAuth 1.0a, supporting uploads.",
+  "description": "Flickr API with OAuth 1.0A and uploads",
   "version": "0.3.1",
-  "authors": [
-    "Christopher Brown <audiere@gmail.com>",
-    "Sujal Shah <codesujal@gmail.com>"
-  ],
   "keywords": ["flickr", "uploads", "api", "oauth"],
-  "repository": "git://github.com/chbrown/flickr-with-uploads.git",
-  "dependencies": {
-    "oauth": "git://github.com/chbrown/node-oauth.git",
-    "form-data": "*"
+  "repository" : {
+    "type" : "git",
+    "url" : "git://github.com/chbrown/flickr-with-uploads.git"
   },
-  "main": "index"
+  "bugs": {
+    "url": "https://github.com/chbrown/flickr-with-uploads/issues",
+    "email": "Christopher Brown <io@henrian.com>"
+  },
+  "author": "Christopher Brown <io@henrian.com> (http://henrian.com)",
+  "contributors": [
+    "Sujal Shah <codesujal@gmail.com>",
+    "Thomas (https://github.com/tomap)",
+    "Tomasz Kołodziejski (https://github.com/neojski)"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "form-data": "*",
+    "oauth": "git://github.com/chbrown/node-oauth.git",
+    "sax": "*"
+  }
 }

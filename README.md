@@ -1,6 +1,6 @@
 # flickr-with-uploads
 
-123-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
+128-line Node.js wrapper for the Flickr API, using oAuth authentication, supporting uploads.
 
 It currently supports only Flickr's "API Methods" (on the right side of the page [Flickr API Documentation](http://www.flickr.com/services/api/)), and [Uploading](http://www.flickr.com/services/api/upload.api.html).
 
@@ -140,4 +140,4 @@ The node-flickr rewrite was all just to support my [Flickr Backup Script](https:
 
 ## License
 
-Copyright (c) 2013 Christopher Brown, [MIT Licensed](http://opensource.org/licenses/MIT)
+Copyright © 2012–2013 Christopher Brown. [MIT Licensed](LICENSE).
