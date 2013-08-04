@@ -138,7 +138,7 @@ function coalesce(body, callback) {
     callback signature: function(err, response_object)
   */
   try {
-    return JSON.parse(body);
+    callback(null, JSON.parse(body));
   }
   catch (json_parse_exception) {
     // for example, an async upload response:
