@@ -162,14 +162,19 @@ var requestFactory = module.exports = function(consumer_key, consumer_secret, oa
     // callback signature: function(err, response_object)
     opts.api_key = consumer_key;
     request(opts, oauth_client, oauth_token, oauth_token_secret, function(err, response) {
-      readToEnd(response, function(err, body) {
-        if (err) {
-          callback(err);
-        }
-        else {
-          coalesce(body, callback);
-        }
-      });
+      if (err) {
+        callback(err);
+      }
+      else {
+        readToEnd(response, function(err, body) {
+          if (err) {
+            callback(err);
+          }
+          else {
+            coalesce(body, callback);
+          }
+        });
+      }
     });
   };
 };
