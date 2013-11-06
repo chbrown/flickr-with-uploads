@@ -8,6 +8,7 @@
     "api",
     "oauth"
   ],
+  "homepage": "https://github.com/chbrown/flickr-with-uploads",
   "repository": {
     "type": "git",
     "url": "git://github.com/chbrown/flickr-with-uploads.git"
@@ -17,6 +18,9 @@
     "email": "Christopher Brown <io@henrian.com>"
   },
   "author": "Christopher Brown <io@henrian.com> (http://henrian.com)",
+  "bin": {
+    "flickr": "bin/flickr.js"
+  },
   "contributors": [
     "Sujal Shah <codesujal@gmail.com>",
     "Thomas (https://github.com/tomap)",
@@ -24,8 +28,15 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "async": "*",
+    "flickr-with-uploads": "~1.0",
     "form-data": "*",
-    "oauth": "git://github.com/chbrown/node-oauth.git",
-    "sax": "*"
+    "glob": "*",
+    "oauth": "*",
+    "optimist": "*",
+    "sax": "*",
+    "streaming": "*",
+    "underscore": "*",
+    "winston": "*"
   }
 }

@@ -1,5 +1,3 @@
-
-
 ## uploading
 
 http://www.flickr.com/services/api/upload.api.html
