@@ -1,7 +1,7 @@
 {
   "name": "flickr-with-uploads",
   "description": "Flickr API with OAuth 1.0A and uploads",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "keywords": [
     "flickr",
     "uploads",
@@ -29,14 +29,11 @@
   "license": "MIT",
   "dependencies": {
     "async": "*",
-    "flickr-with-uploads": "~1.0",
     "form-data": "*",
     "glob": "*",
     "oauth": "*",
     "optimist": "*",
     "sax": "*",
-    "streaming": "*",
-    "underscore": "*",
-    "winston": "*"
+    "streaming": "*"
   }
 }

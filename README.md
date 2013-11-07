@@ -1,28 +1,15 @@
-# flickr-with-uploads
+# Flickr API + uploads
 
-Small (184 lines) Node.js wrapper for the Flickr API, using oAuth authentication, supporting `upload` and `replace` calls, which have special requirements.
-
-Three dependencies:
-
-* `form-data`, to assemble urls for OAuth signing
-* [`oauth`](https://github.com/chbrown/node-oauth.git), to add OAuth url signatures
-* `sax`, to parse the few calls for which Flickr does not support JSON responses.
-
-I've sent a pull request to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that OAuth library. For the time being, this package requires my fork, which includes that functionality.
-
-**Backwards compatability**
-
-Around June 2013 Flickr made a few changes to their API. The resulting fixes and refactoring have simplified this module, but in doing so made it incompatible with the old usage. If you want the old structure, just require `~0.3` in your dependencies.
-
-Otherwise see below for changes.
+My use-case project, [flickr-sync](https://github.com/chbrown/flickr-sync), was recently merged into this project.
+This brought on a few additional dependencies, but no API changes. All library calls to [flickr-with-uploads](https://github.com/chbrown/flickr-with-uploads) and flickr-sync are the same as before, but both are implemented in flickr-with-uploads.
 
 
-## Install
+## Installation
 
-Using npm directly:
+With `npm`:
 
 ```bash
-npm install flickr-with-uploads
+npm install -g flickr-with-uploads
 ```
 
 Or require the library from your `package.json`:
@@ -145,7 +132,28 @@ Here are some sample responses that the Flickr API will send back for a couple o
 
 ## Development
 
-Fixes are totally welcome! In the master branch, even! Just use sane formatting (like what jsbeautifier.org uses, but with 2-space indents, not 4).
+Fixes are totally welcome! In the master branch, even! Just use sane formatting (like what [jsbeautifier.org](http://jsbeautifier.org/) uses, but with 2-space indents, not 4).
+
+Excepting any hashbang, the following should head all `*.js` files:
+
+    'use strict'; /*jslint es5: true, node: true, indent: 2 */
+
+### Dependencies
+
+* `form-data`, to assemble urls for OAuth signing
+* [`oauth`](https://github.com/chbrown/node-oauth.git), to add OAuth url signatures
+* `sax`, to parse the few calls for which Flickr does not support JSON responses.
+
+I've sent a pull request to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that OAuth library. For the time being, this package requires my fork, which includes that functionality.
+
+      // var wrapped_api = function(opts, callback) {
+      //   logger.info('Flickr API request: %s', opts);
+      //   api(opts, function(err, response_object) {
+      //     logger.info(response_object, 'Flickr API response');
+      //     callback(err, response_object);
+      //   });
+      // };
+
 
 ## License
 

@@ -178,7 +178,3 @@ Each of my pictures happens to be about 10 MB, and I'm on my home wifi, so I wou
 For smaller pictures, or if you have a whole lot of bandwidth, you can add more workers.
 
     flickr sync --directory ~/Pictures --workers 20
-
-## License
-
-Copyright © 2011–2013 Christopher Brown. [MIT Licensed](LICENSE).
