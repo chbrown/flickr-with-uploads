@@ -1,12 +1,16 @@
 # Flickr API + uploads
 
 My use-case project, [flickr-sync](https://github.com/chbrown/flickr-sync), was recently merged into this project.
-This brought on a few additional dependencies, but no API changes. All library calls to [flickr-with-uploads](https://github.com/chbrown/flickr-with-uploads) and flickr-sync are the same as before, but both are implemented in flickr-with-uploads.
+This brought on a few additional dependencies, but no API changes. All library calls to [flickr-with-uploads](https://github.com/chbrown/flickr-with-uploads) and flickr-sync are the same as before, but both are implemented in flickr-with-uploads. The flickr-sync CLI has also been merged over into this package.
 
 
 ## Installation
 
-With `npm`:
+If you have already installed `flickr-sync` globally, do a quick cleanup: `npm uninstall -g flickr-sync`
+
+Or if it's too late for that, the important bit is getting rid of `flickr-sync`'s ownership of the `flickr` script on your `PATH`, so `rm $(which flickr)` will do the trick.
+
+**With `npm`:**
 
 ```bash
 npm install -g flickr-with-uploads
