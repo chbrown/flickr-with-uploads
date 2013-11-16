@@ -1,13 +1,18 @@
 'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
-var fs = require('fs');
 var util = require('util');
 var events = require('events');
 var async = require('async');
+
 var logger = require('../lib/logger');
 
 var Photo = require('./photo');
 
-var Photoset = module.exports = function(id, title, description, primary_photo_id, size) {
+var Photoset = module.exports = function(id, title, description, primary_photo, size) {
+  events.EventEmitter.call(this);
+
+  // api request function to fill in later if required
+  this.api = null;
+
   // the Flickr-assigned ID (maybe null)
   this.id = id;
   // the title._content value or folder name if the photoset is new
@@ -15,12 +20,13 @@ var Photoset = module.exports = function(id, title, description, primary_photo_i
   // description._content, if any
   this.description = description;
   // primary
-  this.primary_photo_id = primary_photo_id;
+  this.primary_photo = primary_photo;
   // the number of photos + videos, if any
   this.size = size;
 
-  // initialize event-making
-  events.EventEmitter.call(this);
+  // we haven't started initializing yet, so _ready_pending is false
+  this._ready_pending = false;
+  this._photos = {};
 };
 util.inherits(Photoset, events.EventEmitter);
 
@@ -53,83 +59,73 @@ Photoset.fromJSON = function(obj) {
       }
 
   */
-  // logger.debug('Photoset.fromJSON: %j', obj);
   var size = parseInt(obj.photos, 10) + parseInt(obj.videos, 10);
   return new Photoset(obj.id, obj.title._content, obj.description._content, obj.primary, size);
 };
 
-Photoset.prototype.create = function(api, callback) {
-  /** Create a new photoset with this one's properties, even if .id is already set.
+Photoset.prototype.ready = function(callback) {
+  /** Ensure that the photoset exists on Flickr, and that we have fetched info about all its photos.
 
-  callback: function(Error | null)
-  */
-  var self = this;
-  logger.debug('Creating photoset, "%s"', this.title);
-  api({
-    method: 'flickr.photosets.create',
-    title: this.title,
-    description: this.description,
-    primary_photo_id: this.primary_photo_id,
-  }, function(err, res) {
-    if (err) return callback(err);
+  If there is no available id, persist this photoset to Flickr and get an id.
 
-    self.id = res.photoset.id;
-    callback();
-  });
-};
-
-Photoset.prototype.initialize = function(api, callback) {
-  /** Ensure that the photoset exists on Twitter, and that we have fetched info about all its photos.
-
-  If there is no available id, persist this photoset to Flickr.
+  This fills `this._photos`
 
   Consistently asynchronous.
 
   callback: function(Error | null)
   */
-  var self = this;
-  if (this.id && this.photos) {
-    // we're all ready to go!
-    // force async for the sake of consistency
+  if (this.id && Object.keys(this._photos).length === 0) {
+    // we're all ready to go! force async for the sake of consistency
     setImmediate(callback);
   }
-  else if (this._initializing) {
-    logger.debug('Waiting for photoset, "%s", to initialize', this.title);
-    this.on('initialized', function() {
-      // logger.debug('Photoset "%s" triggered initialized', this.title);
-      callback();
-    });
-  }
   else {
-    this._initializing = true;
+    this.on('ready', callback);
 
-    var fetchPhotos = function(err) {
-      if (err) return callback(err);
+    // only need to get ready once:
+    if (!this._ready_pending) {
+      this._ready_pending = true;
 
-      // this.id exists, now
-      self.getPhotos(api, function(err, photos) {
-        if (err) return callback(err);
+      var self = this;
+      if (this.id) {
+        this.getPhotos(function(err, photos) {
+          if (err) return callback(err);
 
-        // this.id && this.photos is checked before this._initializing, so we can just abandon this._initializing
-        self.photos = photos;
-        self.emit('initialized');
-      });
-    };
+          photos.forEach(function(photo) {
+            self._photos[photo.title] = photo;
+          });
 
-    if (!this.id) {
-      this.create(api, fetchPhotos);
-    }
-    else {
-      // assume this.id exists
-      fetchPhotos();
+          self.emit('ready');
+        });
+      }
+      else {
+        // Create a new photoset with this's properties
+        logger.debug('Creating photoset, "%s"', this.title);
+        this.api({
+          method: 'flickr.photosets.create',
+          title: this.title,
+          description: this.description,
+          primary_photo_id: this.primary_photo.id,
+        }, function(err, res) {
+          if (err) return callback(err);
+
+          self.id = res.photoset.id;
+          self.emit('ready');
+        });
+      }
     }
   }
 };
 
-Photoset.prototype.getPhotos = function(api, callback) {
+Photoset.prototype.getPhotos = function(callback) {
   /** Page through all available photos, assuming the photoset exists.
 
-  Does not store the photos returned in the callback.
+  This method is called and processed from .ready()
+
+  This method does not store the photos returned in the callback.
+
+  Requires that:
+  * `this.api` is an API request function
+  * `this.id` is a valid Photoset ID
 
   callback: function(Error | null, [Photo] | null)
   */
@@ -141,7 +137,7 @@ Photoset.prototype.getPhotos = function(api, callback) {
   (function getPage(page_index) {
     // logger.debug('getPhotos.getPage: %d/%d', page_index, page_count);
     if (page_index <= page_count) {
-      api({method: 'flickr.photosets.getPhotos', photoset_id: self.id, page: page_index}, function(err, res) {
+      self.api({method: 'flickr.photosets.getPhotos', photoset_id: self.id, page: page_index}, function(err, res) {
         if (err) return callback(err);
 
         page_count = res.photoset.pages;
@@ -162,63 +158,39 @@ Photoset.prototype.getPhotos = function(api, callback) {
   })(1);
 };
 
-Photoset.prototype.findPhoto = function(title) {
-  /**
-  Requires that .photos (a list of Photo objects) is set already.
+Photoset.prototype.addPhoto = function(photo, callback) {
+  /** .addPhoto(photo) adds an existing Flickr photo to an existing Flickr photoset.
 
-  returns a Photo if there is one matching this title, else, undefined.
+  Requires that:
+  * `this.api` is an API request function
+  * `this.id` is a String
+
+  callback: function(Error | null)
   */
-  for (var i = 0, photo; (photo = this.photos[i]); i++) {
-    if (photo.title == title) {
-      return photo;
-    }
-  }
-};
-
-Photoset.prototype.upload = function(api, title, filepath, callback) {
-  /** upload:
-
-  Like getPhotos, this does not add the resulting Photo to this Photoset,
-  but returns it in the callback.
-
-  callback: function(Error | null, Photo | null)
-  */
-  // logger.debug('Photoset.uploading: %s -> %s', filepath, title);
-  var photoset_id = this.id;
-  async.auto({
-    upload: function(callback, context) {
-      api({
-        method: 'upload',
-        title: title,
-        description: 'flickr-sync',
-        tags: 'flickr-sync',
-        is_public: 0,
-        is_friend: 0,
-        is_family: 0,
-        hidden: 2,
-        photo: fs.createReadStream(filepath), // {flags: 'r'} by default
-      }, callback);
-    },
-    addPhoto: ['upload', function(callback, context) {
-      api({
-        method: 'flickr.photosets.addPhoto',
-        photoset_id: photoset_id,
-        photo_id: context.upload.photoid._content,
-      }, callback);
-    }],
-    getInfo: ['upload', 'addPhoto', function(callback, context) {
-      api({
-        method: 'flickr.photos.getInfo',
-        photo_id: context.upload.photoid._content,
-      }, callback);
-    }],
-  }, function(err, context) {
-    if (err) return callback(err);
-
-    var photo = Photo.fromJSON(context.getInfo.photo);
-    callback(err, photo);
+  this.api({
+    method: 'flickr.photosets.addPhoto',
+    photoset_id: this.id,
+    photo_id: photo.id,
+  }, function(err, res) {
+    callback(err);
   });
 };
+
+// User.prototype.getCoverPhoto = function(callback) {
+//   /**
+//   callback: function(Error | null, Photo | null)
+//   */
+//   // get the backup-cover-photo (Flickr requires photosets to have cover photos)
+//   this.api({method: 'flickr.photos.search', user_id: this.id, tags: 'api'}, function(err, res) {
+//     if (err) return callback(err);
+
+//     var raw_photo = res.photos.photo[0];
+//     logger.debug('Calling Photo.fromJSON(%j)', raw_photo);
+//     var photo = Photo.fromJSON(raw_photo);
+//     logger.debug('Using cover_photo for all backups: %s', photo.id);
+//     callback(null, photo);
+//   });
+// };
 
 Photoset.merge = function(api, photosets, callback) {
   /** merge: move all the photos from a list of photosets into one of them and delete the others.

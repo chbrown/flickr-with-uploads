@@ -1,5 +1,8 @@
 'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
 var async = require('async');
+var util = require('util');
+var events = require('events');
+
 var logger = require('../lib/logger');
 
 var Photoset = require('./photoset');
@@ -11,85 +14,155 @@ var User = module.exports = function(api, user_id) {
 
   api: initialized Flickr client request function
   */
+  events.EventEmitter.call(this);
+
   this.api = api;
   this.id = user_id === undefined ? 'me' : user_id;
 
-  // _cached_photosets is a map from photoset titles to existing photosets (which are maybe pending)
-  this._cached_photosets = {};
+  // _photosets: a map from photoset titles to existing photosets.
+  // it is set when ready() is called
+  this._photosets = false;
+  this._ready_pending = false;
 };
+util.inherits(User, events.EventEmitter);
 
-User.prototype.getCoverPhoto = function(callback) {
-  /**
-  callback: function(Error | null, Photo | null)
+User.prototype.ready = function(callback) {
+  /** user.ready: ensure that we have fetched all the photosets currently on Flickr.
+  (We don't want to create duplicates, but if the user creates such a photoset after this runs, too bad.)
+
+  Consistently asynchronous.
+
+  callback: function(Error | null)
   */
-  // get the backup-cover-photo (Flickr requires photosets to have cover photos)
-  this.api({method: 'flickr.photos.search', user_id: this.id, tags: 'api'}, function(err, res) {
-    if (err) return callback(err);
+  if (this._photosets) {
+    setImmediate(callback);
+  }
+  else {
+    this.on('ready', callback);
 
-    var raw_photo = res.photos.photo[0];
-    logger.debug('Calling Photo.fromJSON(%j)', raw_photo);
-    var photo = Photo.fromJSON(raw_photo);
-    logger.debug('Using cover_photo for all backups: %s', photo.id);
-    callback(null, photo);
-  });
+    if (!this._ready_pending) {
+      this._ready_pending = true;
+
+      var self = this;
+      this.api({method: 'flickr.photosets.getList', per_page: 500}, function(err, res) {
+        if (err) return callback(err);
+
+        // photosets are now all real Photoset objects, but they are not yet initialized
+        var photosets = res.photosets.photoset.map(Photoset.fromJSON);
+        logger.debug('Found %d photosets.', photosets.length);
+
+        self._photosets = {};
+        photosets.forEach(function(photoset) {
+          photoset.api = self.api;
+          self._photosets[photoset.title] = photoset;
+        });
+
+        self.emit('ready');
+      });
+    }
+  }
 };
 
-User.prototype.getPhotosets = function(callback) {
-  /**
-  callback: function(Error | null, [Photoset] | null)
-  */
-  var self = this;
-  this.api({method: 'flickr.photosets.getList', per_page: 500}, function(err, res) {
-    if (err) return callback(err);
-
-    var photosets = res.photosets.photoset.map(Photoset.fromJSON);
-    logger.debug('Found %d photosets.', photosets.length);
-
-    callback(null, photosets);
-  });
-};
-
-User.prototype.getPhotoset = function(photoset_title, callback) {
+User.prototype.findOrCreatePhotoset = function(title, primary_photo, callback) {
+  throw new Error('Deprecated');
   /** Make or grab an existing photoset from Flickr.
 
-  Requires that .photosets and .cover_photo have been populated.
-
-  This function must be truly async because it's used as a streaming.Queue worker.
+  This function must be consistently async because it's used as a streaming.Queue worker.
 
   callback: function(Error | null, Photoset | null)
   */
-  // 1. try the photoset cache first
-  if (this._cached_photosets[photoset_title]) {
-    var cached_photoset = this._cached_photosets[photoset_title];
-    // photoset.initialize must be truly async
-    cached_photoset.initialize(this.api, function(err) {
-      if (err) {
-        logger.error('Error initializing cached_photoset: %j', err);
-        return callback(err);
-      }
+  var self = this;
+  this.ready(function(err) {
+    if (err) return callback(err);
 
-      callback(null, cached_photoset);
-    });
-  }
-  // 2. try to find / make a new photoset
-  else {
-    var photoset = new Photoset(null, photoset_title, 'flickr-sync', this.cover_photo.id, 0);
-
-    for (var i = 0, current_photoset; (current_photoset = this.photosets[i]); i++) {
-      if (current_photoset.title == photoset_title) {
-        photoset = current_photoset;
-      }
+    // 1. try the photoset cache first
+    var photoset = self._photosets[title];
+    if (photoset === undefined) {
+      // 2. make a new photoset
+      // new Photoset(id, title, description, cover photo id, size = # of photos + # of videos)
+      var now_string = new Date().toISOString().replace('T', ' ').split('.')[0];
+      var description = 'Created by flickr sync on ' + now_string;
+      photoset = new Photoset(null, title, description, null, 0);
+      photoset.api = self.api;
+      // store in the cache; it's one of the family now.
+      self._photosets[title] = photoset;
     }
 
-    this._cached_photosets[photoset_title] = photoset;
-    photoset.initialize(this.api, function(err) {
-      if (err) {
-        logger.error('Error initializing created / found photoset: %j', err);
-        console.trace();
-        return callback(err);
-      }
-
-      callback(null, photoset);
+    // photoset is now in place, but maybe it's initializing now
+    photoset.ready(function(err) {
+      callback(err, photoset);
     });
-  }
+  });
+};
+
+
+User.prototype.findOrCreatePhoto = function(photo_title, photoset_title, filepath, callback) {
+  /** If the photoset already exists, and contains the photo, return that Photo object.
+
+  Otherwise, upload the photo, create the photoset, and fetch the info for that photo.
+
+  callback: function(Error | null, Photo | null, Photoset | null)
+  */
+  var self = this;
+  this.ready(function(err) {
+    if (err) return callback(err);
+
+    // 1. see if the photoset exists
+    var photoset = self._photosets[photoset_title];
+    if (photoset) {
+      // 2a. now see if the photo already exists in the photoset
+      photoset.ready(function(err) {
+        var photo = photoset._photos[photo_title];
+        if (photo) {
+          // 2b. we have already uploaded it. so chill.
+          callback(null, photo, photoset);
+        }
+        else {
+          // 2c. got the photoset, just need to upload the photo.
+          photo = new Photo(null, photo_title, 0, 0, 0, filepath);
+          photo.api = self.api;
+          photo.ready(function(err) {
+            logger.debug('Adding photo "%s" to photoset "%s"', photo.title, photoset.title);
+            photoset.addPhoto(photo, function(err) {
+              if (err) return callback(err);
+
+              callback(null, photo, photoset);
+            });
+          });
+        }
+      });
+    }
+    else {
+      // 3a. immediately create the photoset, but don't initialize it yet.
+      // function(id, title, description, primary_photo_id, size) {
+      var now_string = new Date().toISOString().replace('T', ' ').split('.')[0];
+      var description = 'Created by flickr sync on ' + now_string;
+      // new Photoset(id, title, description, cover photo id, size = # of photos + # of videos)
+      photoset = new Photoset(null, photoset_title, description, null, 0);
+      photoset.api = self.api;
+      // the _ready_pending is a total hack here.
+      photoset._ready_pending = true;
+      self._photosets[photoset_title] = photoset;
+
+      // 3b. now upload the photo, before we require that the photoset is ready
+      // new Photo(id, title, is_public, is_friend, is_family, filepath) {
+      var photo = new Photo(null, photo_title, 0, 0, 0, filepath);
+      photo.api = self.api;
+      photo.ready(function(err) {
+        if (err) return callback(err);
+
+        // 3c. set that brand new photo as the cover
+        logger.debug('Creating photoset, "%s"', photoset_title);
+
+        photoset.primary_photo = photo;
+        // how to do this _ready_pending better?
+        photoset._ready_pending = false;
+        photoset.ready(function(err) {
+          if (err) return callback(err);
+
+          callback(null, photo, photoset);
+        });
+      });
+    }
+  });
 };
