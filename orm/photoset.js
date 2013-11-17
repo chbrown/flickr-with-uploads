@@ -10,9 +10,6 @@ var Photo = require('./photo');
 var Photoset = module.exports = function(id, title, description, primary_photo, size) {
   events.EventEmitter.call(this);
 
-  // api request function to fill in later if required
-  this.api = null;
-
   // the Flickr-assigned ID (maybe null)
   this.id = id;
   // the title._content value or folder name if the photoset is new
@@ -24,9 +21,16 @@ var Photoset = module.exports = function(id, title, description, primary_photo, 
   // the number of photos + videos, if any
   this.size = size;
 
-  // we haven't started initializing yet, so _ready_pending is false
-  this._ready_pending = false;
+  // local stateful things
   this._photos = {};
+  // api request function to fill in later if required
+  this.api = null;
+  // this._ready is somewhat equivalent to (this.id && this._photos != {})
+  this._ready = false;
+  this.on('ready', function() { this._ready = true; }.bind(this));
+  // this._ready_pending is set to true once the initialization process is started
+  // (since it only needs to be readied once)
+  this._ready_pending = false;
 };
 util.inherits(Photoset, events.EventEmitter);
 
@@ -74,7 +78,7 @@ Photoset.prototype.ready = function(callback) {
 
   callback: function(Error | null)
   */
-  if (this.id && Object.keys(this._photos).length === 0) {
+  if (this._ready) {
     // we're all ready to go! force async for the sake of consistency
     setImmediate(callback);
   }
@@ -84,6 +88,7 @@ Photoset.prototype.ready = function(callback) {
     // only need to get ready once:
     if (!this._ready_pending) {
       this._ready_pending = true;
+      logger.debug('Getting photoset "%s" ready', this.title);
 
       var self = this;
       if (this.id) {
@@ -167,12 +172,19 @@ Photoset.prototype.addPhoto = function(photo, callback) {
 
   callback: function(Error | null)
   */
+  var self = this;
   this.api({
     method: 'flickr.photosets.addPhoto',
     photoset_id: this.id,
     photo_id: photo.id,
   }, function(err, res) {
-    callback(err);
+    if (err) return callback(err);
+
+    // and record it locally
+    self._photos[photo.title] = photo;
+
+    logger.debug('photoset.addPhoto() result: %j', res);
+    callback();
   });
 };
 

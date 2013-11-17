@@ -67,28 +67,32 @@ Photo.prototype.ready = function(callback) {
       this._ready_pending = true;
 
       var now_string = new Date().toISOString().replace('T', ' ').split('.')[0];
+      logger.debug('Starting upload of photo "%s"', this.title);
       this.api({
         method: 'upload',
         title: this.title,
         description: 'Uploaded via flickr sync on ' + now_string,
         tags: 'sync',
-        is_public: 0,
-        is_friend: 0,
-        is_family: 0,
+        is_public: this.is_public,
+        is_friend: this.is_friend,
+        is_family: this.is_family,
         hidden: 2,
         photo: fs.createReadStream(this.filepath), // {flags: 'r'} by default
       }, function(err, res) {
         if (err) return callback(err);
 
         logger.debug('Upload result: %j', res);
-        self.api({
-          method: 'flickr.photos.getInfo',
-          photo_id: res.photoid._content,
-        }, function(err, res) {
-          if (err) return callback(err);
+        // we don't need anything from getInfo, really, just photoid, which we get back from upload
+        // self.api({
+        //   method: 'flickr.photos.getInfo',
+        //   photo_id: self.id,
+        // }, function(err, res) {
+        //   if (err) return callback(err);
+        //   logger.debug('getInfo result: %j', res);
+        // });
+        self.id = res.photoid._content;
 
-          callback();
-        });
+        callback();
       });
     }
   }

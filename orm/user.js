@@ -115,6 +115,7 @@ User.prototype.findOrCreatePhoto = function(photo_title, photoset_title, filepat
         var photo = photoset._photos[photo_title];
         if (photo) {
           // 2b. we have already uploaded it. so chill.
+          logger.debug('Found photo "%s" already exists in photoset "%s"', photo.title, photoset.title);
           callback(null, photo, photoset);
         }
         else {
