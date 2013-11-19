@@ -63,39 +63,6 @@ User.prototype.ready = function(callback) {
   }
 };
 
-User.prototype.findOrCreatePhotoset = function(title, primary_photo, callback) {
-  throw new Error('Deprecated');
-  /** Make or grab an existing photoset from Flickr.
-
-  This function must be consistently async because it's used as a streaming.Queue worker.
-
-  callback: function(Error | null, Photoset | null)
-  */
-  var self = this;
-  this.ready(function(err) {
-    if (err) return callback(err);
-
-    // 1. try the photoset cache first
-    var photoset = self._photosets[title];
-    if (photoset === undefined) {
-      // 2. make a new photoset
-      // new Photoset(id, title, description, cover photo id, size = # of photos + # of videos)
-      var now_string = new Date().toISOString().replace('T', ' ').split('.')[0];
-      var description = 'Created by flickr sync on ' + now_string;
-      photoset = new Photoset(null, title, description, null, 0);
-      photoset.api = self.api;
-      // store in the cache; it's one of the family now.
-      self._photosets[title] = photoset;
-    }
-
-    // photoset is now in place, but maybe it's initializing now
-    photoset.ready(function(err) {
-      callback(err, photoset);
-    });
-  });
-};
-
-
 User.prototype.findOrCreatePhoto = function(photo_title, photoset_title, filepath, callback) {
   /** If the photoset already exists, and contains the photo, return that Photo object.
 

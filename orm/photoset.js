@@ -88,7 +88,6 @@ Photoset.prototype.ready = function(callback) {
     // only need to get ready once:
     if (!this._ready_pending) {
       this._ready_pending = true;
-      logger.debug('Getting photoset "%s" ready', this.title);
 
       var self = this;
       if (this.id) {
@@ -187,22 +186,6 @@ Photoset.prototype.addPhoto = function(photo, callback) {
     callback();
   });
 };
-
-// User.prototype.getCoverPhoto = function(callback) {
-//   /**
-//   callback: function(Error | null, Photo | null)
-//   */
-//   // get the backup-cover-photo (Flickr requires photosets to have cover photos)
-//   this.api({method: 'flickr.photos.search', user_id: this.id, tags: 'api'}, function(err, res) {
-//     if (err) return callback(err);
-
-//     var raw_photo = res.photos.photo[0];
-//     logger.debug('Calling Photo.fromJSON(%j)', raw_photo);
-//     var photo = Photo.fromJSON(raw_photo);
-//     logger.debug('Using cover_photo for all backups: %s', photo.id);
-//     callback(null, photo);
-//   });
-// };
 
 Photoset.merge = function(api, photosets, callback) {
   /** merge: move all the photos from a list of photosets into one of them and delete the others.

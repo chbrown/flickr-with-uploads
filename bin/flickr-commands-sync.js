@@ -36,9 +36,9 @@ module.exports = function(api, optimist) {
           uploadLocalPhoto(local_photo, callback);
         });
       }
-      else {
-        logger.info('Uploaded "%s" to "%s"', local_photo.name, local_photo.album);
-      }
+      // else {
+        // logger.info('Uploaded "%s" to "%s"', local_photo.name, local_photo.album);
+      // }
 
       callback();
     });
