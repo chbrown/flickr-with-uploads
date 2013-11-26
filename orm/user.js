@@ -120,8 +120,6 @@ User.prototype.findOrCreatePhoto = function(photo_title, photoset_title, filepat
         if (err) return callback(err);
 
         // 3c. set that brand new photo as the cover
-        logger.debug('Creating photoset, "%s"', photoset_title);
-
         photoset.primary_photo = photo;
         // how to do this _ready_pending better?
         photoset._ready_pending = false;

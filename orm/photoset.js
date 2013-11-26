@@ -182,7 +182,7 @@ Photoset.prototype.addPhoto = function(photo, callback) {
     // and record it locally
     self._photos[photo.title] = photo;
 
-    logger.debug('photoset.addPhoto() result: %j', res);
+    logger.debug('photoset.addPhoto result: %j', res);
     callback();
   });
 };
