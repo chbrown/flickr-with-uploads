@@ -25,16 +25,17 @@ module.exports = function(api, optimist) {
     // Function: findOrCreatePhoto(photo_title, photoset_title, filepath, callback)
     user.findOrCreatePhoto(local_photo.name, local_photo.album, local_photo.filepath, function(err) {
       if (err) {
-        throw err;
+        // throw err;
         logger.error('Failed to upload photo "%s" to photoset "%s"',
           local_photo.name, local_photo.album, err);
         // write local photo back to the end of the queue stream?
         // need to support reopening a streaming.Queue
-        // queue_stream.write(local_photo);
-        logger.warn('Retrying immediately (warning: may induce infinite loop)');
-        return setImmediate(function() {
-          uploadLocalPhoto(local_photo, callback);
-        });
+        logger.warn('Adding to end of queue');
+        queue_stream.write(local_photo);
+        // logger.warn('Retrying immediately (warning: may induce infinite loop)');
+        // return setImmediate(function() {
+        //   uploadLocalPhoto(local_photo, callback);
+        // });
       }
       // else {
         // logger.info('Uploaded "%s" to "%s"', local_photo.name, local_photo.album);
@@ -55,10 +56,10 @@ module.exports = function(api, optimist) {
     logger.debug('Finished walking all files.');
   });
 
-  // 2. filter out directories and hidden files
+  // 2. filter out directories and hidden files and files that are too big (over 1GB)
   var file_stream = new streaming.Filter(function(node) {
     var basename = path.basename(node.path);
-    return node.stats.isFile() && basename[0] != '.';
+    return node.stats.isFile() && basename[0] != '.' && node.stats.size < 1e9;
   })
   .on('error', function(err) {
     logger.error('Error with streaming.Filter: %s', err);
@@ -95,5 +96,5 @@ module.exports = function(api, optimist) {
   .on('end', function() {
     logger.info('Finished uploading all local photos.');
   });
-  local_photo_stream.pipe(queue_stream);
+  local_photo_stream.pipe(queue_stream, {end: false});
 };

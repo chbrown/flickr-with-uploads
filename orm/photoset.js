@@ -9,6 +9,7 @@ var Photo = require('./photo');
 
 var Photoset = module.exports = function(id, title, description, primary_photo, size) {
   events.EventEmitter.call(this);
+  this.setMaxListeners(500);
 
   // the Flickr-assigned ID (maybe null)
   this.id = id;

@@ -146,7 +146,7 @@ Excepting any hashbang, the following should head all `*.js` files:
 
 * `form-data`, to assemble urls for OAuth signing
 * [`oauth`](https://github.com/chbrown/node-oauth.git), to add OAuth url signatures
-* `sax`, to parse the few calls for which Flickr does not support JSON responses.
+* `node-expat`, to parse the few calls for which Flickr does not support JSON responses.
 
 I've sent a pull request to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that OAuth library. For the time being, this package requires my fork, which includes that functionality.
 

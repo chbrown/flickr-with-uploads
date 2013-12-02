@@ -31,8 +31,19 @@ var requestFactory = function(consumer_key, consumer_secret, oauth_token, oauth_
       streaming.readToEnd(res, function(err, chunks) {
         if (err) return callback(err);
 
+        // logger.debug('Flickr API request: %j, response: %s', opts, chunks.join(''));
+
         // coalesce handles the varying response format the Flickr API may decide to send
-        response.coalesce(chunks.join(''), callback);
+        var body = chunks.join('');
+        response.coalesce(body, function(err, result) {
+          if (err) return callback(err);
+
+          if (result.stat !== 'ok') {
+            return callback(new Error('stat != ok in Flickr API response'), result);
+          }
+
+          callback(null, result);
+        });
       });
     });
   };
