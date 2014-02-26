@@ -1,8 +1,8 @@
 'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
 var path = require('path');
 var streaming = require('streaming');
+var logger = require('loge');
 
-var logger = require('../lib/logger');
 var orm = require('../orm');
 
 var LocalPhoto = function(album, name, filepath) {

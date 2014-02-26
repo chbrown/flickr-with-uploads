@@ -2,8 +2,7 @@
 var util = require('util');
 var events = require('events');
 var async = require('async');
-
-var logger = require('../lib/logger');
+var logger = require('loge');
 
 var Photo = require('./photo');
 

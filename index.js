@@ -1,8 +1,8 @@
 'use strict'; /*jslint es5: true, node: true, indent: 2 */
 var oauth = require('oauth');
 var streaming = require('streaming');
+var logger = require('loge');
 
-var logger = require('./lib/logger');
 var request = require('./lib/request');
 var response = require('./lib/response');
 

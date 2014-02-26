@@ -1,6 +1,6 @@
 'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
 var fs = require('fs');
-var logger = require('../lib/logger');
+var logger = require('loge');
 var util = require('util');
 var events = require('events');
 

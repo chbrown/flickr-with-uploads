@@ -2,8 +2,8 @@
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
+var logger = require('loge');
 
-var logger = require('../lib/logger');
 var response = require('../lib/response');
 var streaming = require('streaming');
 
@@ -78,11 +78,13 @@ exports.cleanup = function(request, optimist) {
     if (err) return logger.error('Error calling Flickr API: %s', err);
 
     var photosets = res.photosets.photoset.map(orm.Photoset.fromJSON);
+    // photosets are now orm.Photoset instance
+    logger.debug('Looking for duplicates in %d photosets', photosets.length);
 
     var groups = {};
     photosets.forEach(function(photoset) {
-      if (groups[photoset.title] === undefined) groups[photoset.title] = [];
-      groups[photoset.title].push(photoset);
+      // if (groups[photoset.title] === undefined) groups[photoset.title] = [];
+      groups[photoset.title] = (groups[photoset.title] || []).concat(photoset);
     });
 
     var duplicates = []; // duplicates is a list of lists of photosets with the same title
@@ -93,12 +95,12 @@ exports.cleanup = function(request, optimist) {
     }
 
     async.each(duplicates, function(photosets, callback) {
-      console.log('Merging %d photosets named "%s".', photosets.length, photosets[0].title);
+      logger.info('Merging %d photosets named "%s"', photosets.length, photosets[0].title);
       orm.Photoset.merge(request, photosets, callback);
     }, function(err) {
       if (err) return logger.error(err);
 
-      console.log('Done');
+      logger.info('Done');
     });
   });
 };

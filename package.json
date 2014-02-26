@@ -33,9 +33,10 @@
   "dependencies": {
     "async": "*",
     "form-data": "*",
+    "loge": "*",
     "oauth": "*",
     "optimist": "*",
     "node-expat": "*",
-    "streaming": ">=0.3.7"
+    "streaming": "*"
   }
 }

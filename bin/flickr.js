@@ -3,13 +3,21 @@
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
+var logger = require('loge');
 
 var flickr = require('..');
-var logger = require('../lib/logger');
 
 function main() {
   var optimist = require('optimist')
-    .usage('Usage: flickr <command> [options]')
+    .usage([
+      'Usage: flickr <command> [options]',
+      '',
+      'commands:',
+      '  test: Call "flickr.test.login" to verify connection and credentials',
+      '  api: Call a specific Flickr API method',
+      '  cleanup: Merge photosets with identical names',
+      '  sync: Upload photos and place them into photosets',
+    ].join('\n'))
     .describe({
       workers: 'number of workers to use',
       credentials: 'filepath to json file containing flickr credentials',
