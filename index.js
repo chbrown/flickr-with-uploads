@@ -1,7 +1,7 @@
 'use strict'; /*jslint es5: true, node: true, indent: 2 */
 var oauth = require('oauth');
 var streaming = require('streaming');
-var logger = require('loge');
+//var logger = require('loge');
 
 var request = require('./lib/request');
 var response = require('./lib/response');
@@ -11,7 +11,7 @@ var response = require('./lib/response');
 var oauth_endpoints = {
   request: 'http://www.flickr.com/services/oauth/request_token',
   authorize: 'http://www.flickr.com/services/oauth/authorize',
-  access: 'http://www.flickr.com/services/oauth/access_token',
+  access: 'http://www.flickr.com/services/oauth/access_token'
 };
 
 var requestFactory = function(consumer_key, consumer_secret, oauth_token, oauth_token_secret) {
@@ -39,7 +39,9 @@ var requestFactory = function(consumer_key, consumer_secret, oauth_token, oauth_
           if (err) return callback(err);
 
           if (result.stat !== 'ok') {
-            return callback(new Error('stat != ok in Flickr API response'), result);
+            var message = result.message ? result.message : (result.err ? result.err.msg : 'Unknown Flickr API Error (stat != ok))'),
+                code = result.code ? result.code : (result.err ? result.err.code : 0);
+            return callback(new Error('[ERR-'+code + '] : ' + message));
           }
 
           callback(null, result);
