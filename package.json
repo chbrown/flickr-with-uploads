@@ -1,7 +1,7 @@
 {
   "name": "flickr-with-uploads",
   "description": "Flickr API with OAuth 1.0A and uploads",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "keywords": [
     "flickr",
     "api",
