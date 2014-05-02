@@ -1,4 +1,4 @@
-'use strict'; /*jslint es5: true, node: true, indent: 2 */
+/*jslint node: true */
 
 exports.User = require('./user');
 exports.Photoset = require('./photoset');

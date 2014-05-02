@@ -1,4 +1,4 @@
-'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
+/*jslint node: true */
 var util = require('util');
 var events = require('events');
 var async = require('async');
@@ -12,9 +12,9 @@ var Photoset = module.exports = function(id, title, description, primary_photo, 
 
   // the Flickr-assigned ID (maybe null)
   this.id = id;
-  // the title._content value or folder name if the photoset is new
+  // the title value or folder name if the photoset is new
   this.title = title;
-  // description._content, if any
+  // description, if any
   this.description = description;
   // primary
   this.primary_photo = primary_photo;
@@ -40,31 +40,33 @@ Photoset.fromJSON = function(obj) {
   A raw Photoset might look like this:
 
       {
-        "id": "73805723521590545",
-        "primary": "3035683619",
-        "secret": "52bfc8d1d0",
-        "server": "1350",
-        "farm": 1,
-        "photos": "184",
-        "videos": 0,
-        "title": {
-          "_content": "Breakdance pants"
+        "$": {
+          "id": "73805723521590545",
+          "primary": "3035683619",
+          "secret": "52bfc8d1d0",
+          "server": "1350",
+          "farm": 1,
+          "photos": "184",
+          "videos": 0,
+          "needs_interstitial": 0,
+          "visibility_can_see_set": 1,
+          "count_views": "14",
+          "count_comments": "0",
+          "can_comment": 1,
+          "date_create": "1102975059",
+          "date_update": "1323337004"
         },
-        "description": {
-          "_content": ""
-        },
-        "needs_interstitial": 0,
-        "visibility_can_see_set": 1,
-        "count_views": "14",
-        "count_comments": "0",
-        "can_comment": 1,
-        "date_create": "1102975059",
-        "date_update": "1323337004"
+        "title": [
+          "Breakdance pants"
+        ],
+        "description": [
+          ""
+        ]
       }
 
   */
-  var size = parseInt(obj.photos, 10) + parseInt(obj.videos, 10);
-  return new Photoset(obj.id, obj.title._content, obj.description._content, obj.primary, size);
+  var size = parseInt(obj.$.photos, 10) + parseInt(obj.$.videos, 10);
+  return new Photoset(obj.$.id, obj.title[0], obj.description[0], obj.$.primary, size);
 };
 
 Photoset.prototype.ready = function(callback) {
@@ -148,7 +150,7 @@ Photoset.prototype.getPhotos = function(callback) {
 
         // res.photoset.photo is an array of raw photo json objects
         // logger.debug('Got page: %j', res.photoset.photo, res.photoset.photo.map);
-        var page_photos = res.photoset.photo.map(Photo.fromJSON);
+        var page_photos = res.photoset[0].photo.map(Photo.fromJSON);
         photos.push.apply(photos, page_photos);
 
         getPage(page_index + 1);
@@ -182,7 +184,7 @@ Photoset.prototype.addPhoto = function(photo, callback) {
     // and record it locally
     self._photos[photo.title] = photo;
 
-    logger.debug('photoset.addPhoto result: %j', res);
+    // logger.debug('photoset.addPhoto result: %j', res);
     callback();
   });
 };
@@ -214,7 +216,8 @@ Photoset.merge = function(api, photosets, callback) {
     logger.info('merging photoset "%s", ID=%s, (%d photos and videos)',
       photoset.title, photoset.id, photoset.size);
 
-    photoset.getPhotos(api, function(err, photos) {
+    photoset.api = api;
+    photoset.getPhotos(function(err, photos) {
       if (err) return callback(err);
 
       async.each(photos, function(photo, callback) {

@@ -1,4 +1,4 @@
-'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
+/*jslint node: true */
 var fs = require('fs');
 var logger = require('loge');
 var util = require('util');
@@ -30,18 +30,19 @@ Photo.fromJSON = function(obj) {
   A raw Photo returned by 'flickr.photosets.getPhotos':
 
     {
-      "id": "1721812774",
-      "secret": "9b0b2ef6ea",
-      "server": "1299",
-      "farm": 1,
-      "title": "IMG_3171.JPG",
-      "isprimary": "0"
+      "$": {
+        "id": "1721812774",
+        "secret": "9b0b2ef6ea",
+        "server": "1299",
+        "farm": 1,
+        "title": "IMG_3171.JPG",
+        "isprimary": "0"
+      }
     }
 
   So it's a pretty straightforward translation from raw to model, compared to the Photoset.fromJSON method.
   */
-  // logger.debug('Photo.fromJSON: %j', obj);
-  return new Photo(obj.id, obj.title, obj.ispublic, obj.isfriend, obj.isfamily);
+  return new Photo(obj.$.id, obj.$.title, obj.$.ispublic, obj.$.isfriend, obj.$.isfamily);
 };
 
 Photo.prototype.ready = function(callback) {
@@ -67,7 +68,7 @@ Photo.prototype.ready = function(callback) {
       this._ready_pending = true;
 
       var now_string = new Date().toISOString().replace('T', ' ').split('.')[0];
-      logger.debug('Starting upload of photo "%s"', this.title);
+      logger.debug('Starting upload of photo "%s" (%s)', this.title, this.filepath);
       this.api({
         method: 'upload',
         title: this.title,
@@ -81,16 +82,7 @@ Photo.prototype.ready = function(callback) {
       }, function(err, res) {
         if (err) return callback(err);
 
-        logger.debug('Upload result: %j', res);
-        // we don't need anything from getInfo, really, just photoid, which we get back from upload
-        // self.api({
-        //   method: 'flickr.photos.getInfo',
-        //   photo_id: self.id,
-        // }, function(err, res) {
-        //   if (err) return callback(err);
-        //   logger.debug('getInfo result: %j', res);
-        // });
-        self.id = res.photoid._content;
+        self.id = res.photoid[0];
 
         callback();
       });

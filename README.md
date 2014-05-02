@@ -140,13 +140,12 @@ Fixes are totally welcome! In the master branch, even! Just use sane formatting 
 
 Excepting any hashbang, the following should head all `*.js` files:
 
-    'use strict'; /*jslint es5: true, node: true, indent: 2 */
+    /*jslint node: true */
 
 ### Dependencies
 
 * `form-data`, to assemble urls for OAuth signing
 * [`oauth`](https://github.com/chbrown/node-oauth.git), to add OAuth url signatures
-* `node-expat`, to parse the few calls for which Flickr does not support JSON responses.
 
 I've sent a pull request to ciaranj's `node-oauth`, for some required functionality to allow signing but not GET/POSTing with that OAuth library. For the time being, this package requires my fork, which includes that functionality.
 
@@ -159,6 +158,10 @@ I've sent a pull request to ciaranj's `node-oauth`, for some required functional
       // };
 
 
+## References
+
+https://www.flickr.com/services/api/misc.urls.html
+
 ## License
 
-Copyright © 2012–2013 Christopher Brown. [MIT Licensed](LICENSE).
+Copyright © 2012–2014 Christopher Brown. [MIT Licensed](LICENSE).

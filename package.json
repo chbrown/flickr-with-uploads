@@ -33,10 +33,11 @@
   "dependencies": {
     "async": "*",
     "form-data": "*",
+    "lodash": "*",
     "loge": "*",
     "oauth": "*",
     "optimist": "*",
-    "node-expat": "*",
-    "streaming": "*"
+    "streaming": "*",
+    "xml2js": "*"
   }
 }

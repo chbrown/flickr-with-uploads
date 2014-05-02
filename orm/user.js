@@ -1,4 +1,4 @@
-'use strict'; /*jslint es5: true, node: true, indent: 2 */ /* globals setImmediate */
+/*jslint node: true */
 var async = require('async');
 var util = require('util');
 var events = require('events');
@@ -47,7 +47,7 @@ User.prototype.ready = function(callback) {
         if (err) return callback(err);
 
         // photosets are now all real Photoset objects, but they are not yet initialized
-        var photosets = res.photosets.photoset.map(Photoset.fromJSON);
+        var photosets = res.photosets[0].photoset.map(Photoset.fromJSON);
         logger.debug('Found %d photosets.', photosets.length);
 
         self._photosets = {};
@@ -78,6 +78,7 @@ User.prototype.findOrCreatePhoto = function(photo_title, photoset_title, filepat
     if (photoset) {
       // 2a. now see if the photo already exists in the photoset
       photoset.ready(function(err) {
+        if (err) return callback(err);
         var photo = photoset._photos[photo_title];
         if (photo) {
           // 2b. we have already uploaded it. so chill.
@@ -89,6 +90,8 @@ User.prototype.findOrCreatePhoto = function(photo_title, photoset_title, filepat
           photo = new Photo(null, photo_title, 0, 0, 0, filepath);
           photo.api = self.api;
           photo.ready(function(err) {
+            if (err) return callback(err);
+
             logger.debug('Adding photo "%s" to photoset "%s"', photo.title, photoset.title);
             photoset.addPhoto(photo, function(err) {
               if (err) return callback(err);
