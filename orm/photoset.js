@@ -114,7 +114,7 @@ Photoset.prototype.ready = function(callback) {
         }, function(err, res) {
           if (err) return callback(err);
 
-          self.id = res.photoset.id;
+          self.id = res.photoset[0].$.id;
           self.emit('ready');
         });
       }
